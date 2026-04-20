@@ -116,7 +116,7 @@ End with: ANALYSIS COMPLETE: [X critical alerts, Y growth signals, Z no news]
     try:
         client = Anthropic(api_key=ANTHROPIC_API_KEY)
         message = client.messages.create(
-            model="claude-3-5-haiku-20241022",  # Claude 3.5 Haiku - cheapest option (~$0.10 per run)
+            model="claude-3-5-haiku",  # Claude 3.5 Haiku - try without date suffix
             max_tokens=4096,
             tools=[{"type": "web_search_20260209", "name": "web_search"}],
             messages=[{"role": "user", "content": prompt}]
@@ -203,8 +203,5 @@ Next report: Next Monday at 8 AM PT
         print("❌ Failed to send email")
         sys.exit(1)
  
-if __name__ == "__main__":
-    main()
-
 if __name__ == "__main__":
     main()
