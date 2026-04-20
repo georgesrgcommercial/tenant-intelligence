@@ -116,7 +116,7 @@ End with: ANALYSIS COMPLETE: [X critical alerts, Y growth signals, Z no news]
     try:
         client = Anthropic(api_key=ANTHROPIC_API_KEY)
         message = client.messages.create(
-            model="claude-3-5-haiku",  # Claude 3.5 Haiku - try without date suffix
+            model="claude-opus-4-6",  # Reliable model that works with web search
             max_tokens=4096,
             tools=[{"type": "web_search_20260209", "name": "web_search"}],
             messages=[{"role": "user", "content": prompt}]
