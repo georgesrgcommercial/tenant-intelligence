@@ -77,40 +77,40 @@ def analyze_tenants(tenants, history):
     
     tenant_list = '\n'.join([f"{i+1}. {tenant}" for i, tenant in enumerate(tenants)])
     
-    prompt = f"""You are a commercial real estate intelligence agent. Search the web for NEWS about these {len(tenants)} companies published in the last 2 weeks:
+    prompt = f"""You are a commercial real estate intelligence agent. ONLY search for and report NEWS about these {len(tenants)} companies that was PUBLISHED IN THE LAST 2 WEEKS (14 days):
  
 {tenant_list}
  
-For EACH company, search for and report:
-- Bankruptcy filings, financial distress, payment defaults
-- Facility closures, relocations, consolidations  
-- Major layoffs, hiring freezes, workforce reductions
-- New contracts, expansion announcements
-- Acquisition or merger activity
-- Earnings warnings, profit alerts, revenue misses
-- Leadership changes, strategic pivots
+CRITICAL REQUIREMENTS:
+1. ONLY report news published in the LAST 2 WEEKS - anything older is ignored
+2. For each company search for:
+   - Bankruptcy filings, financial distress, payment defaults
+   - Facility closures, relocations, consolidations  
+   - Major layoffs, hiring freezes, workforce reductions
+   - New contracts, expansion announcements
+   - Acquisition or merger activity
+   - Earnings warnings, profit alerts, revenue misses
+   - Leadership changes, strategic pivots
  
-REQUIREMENTS:
-1. Search thoroughly for ACTUAL NEWS from the past 2 weeks
-2. Include publication date for every item
-3. Only report findings that affect rent payment ability or expansion likelihood
-4. Be specific with details, not vague
-5. Include the source/publication name
+3. Include EXACT publication date for every item (must be within last 2 weeks)
+4. Only report findings that affect rent payment ability or expansion likelihood
+5. Be specific with details and include source/publication name
+6. If a company has no news in the last 2 weeks, list it under NO NEW NEWS
  
 Format your response EXACTLY as:
  
-=== CRITICAL ALERTS (Rent Payment Risk - Red Flags) ===
-- COMPANY NAME: [2-3 sentence description with specific details] Published: [date]
+=== CRITICAL ALERTS (Rent Payment Risk - Last 2 Weeks) ===
+- COMPANY NAME: [2-3 sentence description with specific details] Published: [EXACT DATE - must be within last 2 weeks]
   Source: [publication name]
  
-=== GROWTH SIGNALS (Expansion Opportunities - Green Flags) ===
-- COMPANY NAME: [2-3 sentence description with specific details] Published: [date]
+=== GROWTH SIGNALS (Expansion Opportunities - Last 2 Weeks) ===
+- COMPANY NAME: [2-3 sentence description with specific details] Published: [EXACT DATE - must be within last 2 weeks]
   Source: [publication name]
  
 === NO NEW MATERIAL NEWS IN LAST 2 WEEKS ===
-[List any company names with no significant news]
+[List company names with no significant news published in the last 14 days]
  
-End with: ANALYSIS COMPLETE: [X critical alerts, Y growth signals, Z no news]
+ANALYSIS COMPLETE: [X critical alerts from last 2 weeks, Y growth signals from last 2 weeks, Z no news]
 """
     
     try:
@@ -202,6 +202,9 @@ Next report: Next Monday at 8 AM PT
     else:
         print("❌ Failed to send email")
         sys.exit(1)
+ 
+if __name__ == "__main__":
+    main()
  
 if __name__ == "__main__":
     main()
