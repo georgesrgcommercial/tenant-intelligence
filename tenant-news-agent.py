@@ -6,13 +6,13 @@ import json
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
- 
+
 try:
     from anthropic import Anthropic
 except ImportError:
     print("ERROR: anthropic module not installed")
     sys.exit(1)
- 
+
 # Configuration
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 SMTP_SERVER = 'smtp.gmail.com'
@@ -22,7 +22,7 @@ SMTP_PASS = os.getenv('SMTP_PASS', '')
 EMAIL_FROM = os.getenv('EMAIL_FROM', '')
 EMAIL_TO = os.getenv('EMAIL_TO', '')
 HISTORY_FILE = 'reported_news.json'
- 
+
 def check_config():
     """Verify all required config is present"""
     missing = []
@@ -41,7 +41,7 @@ def check_config():
         print(f"❌ ERROR: Missing environment variables: {', '.join(missing)}")
         return False
     return True
- 
+
 def load_tenants(filename='tenants.txt'):
     """Load tenant list from file"""
     if not os.path.exists(filename):
@@ -51,7 +51,7 @@ def load_tenants(filename='tenants.txt'):
     with open(filename, 'r') as f:
         tenants = [line.strip() for line in f if line.strip()]
     return tenants
- 
+
 def load_history():
     """Load previously reported news"""
     if os.path.exists(HISTORY_FILE):
@@ -61,7 +61,7 @@ def load_history():
         except:
             return {}
     return {}
- 
+
 def save_history(history):
     """Save reported news to file"""
     try:
@@ -69,7 +69,7 @@ def save_history(history):
             json.dump(history, f, indent=2)
     except Exception as e:
         print(f"⚠️  Warning: Could not save history: {e}")
- 
+
 def analyze_tenants(tenants, history):
     """Use Claude to analyze all tenants"""
     if not tenants:
@@ -77,33 +77,46 @@ def analyze_tenants(tenants, history):
     
     tenant_list = '\n'.join([f"{i+1}. {tenant}" for i, tenant in enumerate(tenants)])
     
-    prompt = f"""Search the web for BRAND NEW news (last 2 weeks ONLY) about these {len(tenants)} companies:
- 
+    prompt = f"""You are a commercial real estate intelligence agent. Search the web for NEWS about these {len(tenants)} companies published in the last 2 weeks:
+
 {tenant_list}
- 
-CRITICAL:
-1. Only report news from last 2 weeks
-2. Do NOT repeat old news
-3. Only include items affecting rent payment or expansion
- 
-Format:
- 
-=== CRITICAL ALERTS (Rent Payment Risk) ===
-- COMPANY: [Brief description] Published: [date]
- 
-=== GROWTH SIGNALS (Expansion) ===
-- COMPANY: [Brief description] Published: [date]
- 
-=== NO NEW NEWS ===
-[Company names]
- 
-ANALYSIS COMPLETE: [X alerts, Y signals, Z no news]
+
+For EACH company, search for and report:
+- Bankruptcy filings, financial distress, payment defaults
+- Facility closures, relocations, consolidations  
+- Major layoffs, hiring freezes, workforce reductions
+- New contracts, expansion announcements
+- Acquisition or merger activity
+- Earnings warnings, profit alerts, revenue misses
+- Leadership changes, strategic pivots
+
+REQUIREMENTS:
+1. Search thoroughly for ACTUAL NEWS from the past 2 weeks
+2. Include publication date for every item
+3. Only report findings that affect rent payment ability or expansion likelihood
+4. Be specific with details, not vague
+5. Include the source/publication name
+
+Format your response EXACTLY as:
+
+=== CRITICAL ALERTS (Rent Payment Risk - Red Flags) ===
+- COMPANY NAME: [2-3 sentence description with specific details] Published: [date]
+  Source: [publication name]
+
+=== GROWTH SIGNALS (Expansion Opportunities - Green Flags) ===
+- COMPANY NAME: [2-3 sentence description with specific details] Published: [date]
+  Source: [publication name]
+
+=== NO NEW MATERIAL NEWS IN LAST 2 WEEKS ===
+[List any company names with no significant news]
+
+End with: ANALYSIS COMPLETE: [X critical alerts, Y growth signals, Z no news]
 """
     
     try:
         client = Anthropic(api_key=ANTHROPIC_API_KEY)
         message = client.messages.create(
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5-20241022",  # Haiku 4.5 - cheapest option (~$0.10 per run)
             max_tokens=4096,
             tools=[{"type": "web_search_20260209", "name": "web_search"}],
             messages=[{"role": "user", "content": prompt}]
@@ -118,7 +131,7 @@ ANALYSIS COMPLETE: [X alerts, Y signals, Z no news]
     except Exception as e:
         print(f"❌ API Error: {e}")
         return f"Error analyzing tenants: {str(e)}"
- 
+
 def send_email(subject, body):
     """Send email via SMTP"""
     try:
@@ -139,7 +152,7 @@ def send_email(subject, body):
     except Exception as e:
         print(f"❌ Email Error: {e}")
         return False
- 
+
 def main():
     """Main execution"""
     print("=" * 60)
@@ -177,9 +190,9 @@ def main():
     subject = f"Tenant Intelligence - {datetime.now().strftime('%b %d, %Y')}"
     body = f"""TENANT INTELLIGENCE REPORT
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M PT')}
- 
+
 {analysis}
- 
+
 ---
 Next report: Next Monday at 8 AM PT
 """
@@ -189,6 +202,6 @@ Next report: Next Monday at 8 AM PT
     else:
         print("❌ Failed to send email")
         sys.exit(1)
- 
+
 if __name__ == "__main__":
     main()
